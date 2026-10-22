@@ -107,6 +107,38 @@ and builds with `CRAFT_I18N_DIR` and `CRAFT_I18N_REQUIRED=1`. Packaging `needs:`
 [i18n gate](#6-i18n-gateyml). A manual run can pass `skip-i18n-gate: true`; other events ignore it.
 An app without `craft-i18n.rev` builds as before.
 
+### Applications that link libdbus
+
+Linux native and RISC-V dependency actions install target libdbus headers. Headers
+alone do not link libdbus or enable portal support. Current upstream apps using
+pure-Rust `zbus` do not need a libdbus runtime; the native Wayland prototype is a
+separate, unreleased consumer.
+
+When an app adopts a dependency that links `libdbus-1.so.3`, set
+`needs-libdbus: true` on its `release.yml` call. The default is false: other
+apps retain their existing Arch dependencies and native build tools. Opting in
+adds Arch's `dbus` runtime dependency and Meson/Ninja for an app's private
+libdbus AppImage build; it does not itself bundle any library.
+
+The app must also handle its own distribution paths:
+
+- Debian: declare `libdbus-1-3`; RPM: require the target library capability
+  `libdbus-1.so.3()(64bit)` for 64-bit packages.
+- AppImage: bundle the library and its required dependencies/licences, or document
+  and verify a host-library requirement. A build header is not a runtime bundle.
+- Flatpak: verify the pinned Platform supplies the runtime and the SDK supplies
+  development files. Do not grant broad D-Bus or filesystem access merely to link it.
+- Plain Linux tarballs: document the host `libdbus-1.so.3` requirement.
+- FreeBSD: inspect the resolved target feature graph first. VectorCraft's prototype
+  enables `wayland-portal` only under `cfg(target_os = "linux")`, so this feature
+  does not introduce libdbus on FreeBSD. An app that separately enables it there
+  must install `dbus` for both host and cross sysroot and document the runtime.
+- Nix: each app's flake must supply `pkg-config` at build time and `dbus` in its
+  derivation/development shell; the shared Nix workflow skips apps without a flake.
+
+Native Wayland support still requires the app's adapter/API dependencies to land;
+installing these packages does not make that feature available by itself.
+
 ### 2. `packaging-lint.yml`
 Lints all packaging configurations and metadata:
 - `actionlint` for workflow syntax
@@ -409,13 +441,3 @@ The tests execute the FreeBSD run template under the host's POSIX shell with
 fixture build/test commands and real tar archives. They cover failures in each
 custom test group, default build/test failures, missing/corrupt packages and font
 environment propagation. They do not replace native FreeBSD caller runs.
-
-
-## Linux portal build prerequisite
-
-The native and RISC-V cross-compilation dependency actions install libdbus
-headers for the target architecture. Applications that opt into native Wayland
-file-portal support through libdbus can then build on clean runners. This only
-adds build dependencies; it does not enable a feature, change app permissions or
-alter the release dependency graph. Native apt installation and RISC-V linking
-still need validation on the corresponding CI runners.

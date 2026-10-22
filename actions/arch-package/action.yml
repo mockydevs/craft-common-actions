@@ -2,6 +2,10 @@ name: "Arch Linux package"
 description: "Builds an Arch Linux package (.pkg.tar.zst) from a Craft app's release tarball using makepkg"
 
 inputs:
+  needs-libdbus:
+    description: "Declare dbus as a runtime dependency when the app links libdbus"
+    required: false
+    default: "false"
   tarball:
     description: "Path to the release tarball (<app>-<version>-linux-<arch>.tar.gz)"
     required: true
@@ -28,6 +32,7 @@ runs:
     - name: Build the Arch package with makepkg
       shell: bash
       env:
+        NEEDS_LIBDBUS: ${{ inputs.needs-libdbus }}
         TARBALL: ${{ inputs.tarball }}
         TARGET_ARCH: ${{ inputs.arch }}
         OUTPUT_DIR: ${{ inputs.output-dir }}
@@ -45,6 +50,7 @@ runs:
           CONTAINER_CLI="$(command -v docker || command -v podman)"
           "$CONTAINER_CLI" run --rm \
             --tmpfs /tmp \
+            -e NEEDS_LIBDBUS="$NEEDS_LIBDBUS" \
             -e TARBALL="$TARBALL" \
             -e TARGET_ARCH="$TARGET_ARCH" \
             -e OUTPUT_DIR="$OUTPUT_DIR" \

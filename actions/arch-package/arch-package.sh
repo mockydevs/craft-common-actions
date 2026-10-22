@@ -5,6 +5,7 @@
 #   writes <output dir>/<app>-<version>-linux-<arch>.pkg.tar.zst (default output dir: dist/release)
 #
 # Env: ARCH_LICENSE        SPDX license expression (default: MIT OR Apache-2.0)
+#      NEEDS_LIBDBUS       declare the dbus runtime dependency (true or false, default: false)
 #      PKGREL              Package release number (default: 1)
 #      SOURCE_DATE_EPOCH   timestamp for builddate and package reproducibility (default: now)
 set -euo pipefail
@@ -17,6 +18,14 @@ pkgrel="${PKGREL:-1}"
 epoch="${SOURCE_DATE_EPOCH:-$(date +%s)}"
 
 die() { echo "error: $*" >&2; exit 1; }
+
+# A fixed boolean opt-in avoids imposing a new runtime on every shared-workflow app.
+dbus_dependency=""
+case "${NEEDS_LIBDBUS:-false}" in
+  true) dbus_dependency=" 'dbus'" ;;
+  false) ;;
+  *) die "NEEDS_LIBDBUS must be true or false" ;;
+esac
 
 [[ -f "$tarball" ]] || die "$tarball not found"
 
@@ -173,7 +182,7 @@ pkgdesc=$(printf '%q' "$pkgdesc")
 arch=('$arch')
 url=$(printf '%q' "$url")
 license=($license_str)
-depends=('glibc' 'gcc-libs' 'hicolor-icon-theme' 'libxkbcommon' 'vulkan-icd-loader')
+depends=('glibc' 'gcc-libs' 'hicolor-icon-theme' 'libxkbcommon' 'vulkan-icd-loader'$dbus_dependency)
 optdepends=(
   'alsa-lib: sound support'
   'pipewire-alsa: audio playback and recording via PipeWire'

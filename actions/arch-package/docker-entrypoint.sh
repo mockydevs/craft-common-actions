@@ -33,6 +33,7 @@ run_as_builder() {
   if command -v runuser >/dev/null 2>&1; then
     runuser -u builder -- env \
       HOME="$builder_home" \
+      NEEDS_LIBDBUS="${NEEDS_LIBDBUS:-false}" \
       TARBALL="$tarball" \
       TARGET_ARCH="$target_arch" \
       OUTPUT_DIR="$out_dir" \
@@ -43,6 +44,7 @@ run_as_builder() {
   else
     su builder -s /usr/bin/env -- \
       HOME="$builder_home" \
+      NEEDS_LIBDBUS="${NEEDS_LIBDBUS:-false}" \
       TARBALL="$tarball" \
       TARGET_ARCH="$target_arch" \
       OUTPUT_DIR="$out_dir" \
