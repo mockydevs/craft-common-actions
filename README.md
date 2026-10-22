@@ -383,3 +383,13 @@ The tests execute the FreeBSD run template under the host's POSIX shell with
 fixture build/test commands and real tar archives. They cover failures in each
 custom test group, default build/test failures, missing/corrupt packages and font
 environment propagation. They do not replace native FreeBSD caller runs.
+
+
+## Linux portal build prerequisite
+
+The native and RISC-V cross-compilation dependency actions install libdbus
+headers for the target architecture. Applications that opt into native Wayland
+file-portal support through libdbus can then build on clean runners. This only
+adds build dependencies; it does not enable a feature, change app permissions or
+alter the release dependency graph. Native apt installation and RISC-V linking
+still need validation on the corresponding CI runners.
